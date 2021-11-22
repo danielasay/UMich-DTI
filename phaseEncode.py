@@ -12,31 +12,29 @@ import time
 subDir = "/PROJECTS/REHARRIS/explosives/raw/"
 dicomPath = "/DTI/dti/dti_102multihb/run_01"
 
-def getPhaseEncodeDirections(dicomPath, subDir, niftiDir=None):
-	for sub in getSubList(subDir):
-		fullPath = subDir + sub + dicomPath
-		os.chdir(fullPath)
-		if checkForDicoms(sub):
-			os.chdir(subDir)
-			continue
-		print("Unzipping dicoms for subject: " + sub)
-		untar("dicom.tgz")
-		os.chdir(subDir)
+def getPhaseEncodeDirections(dicomPath, subDir):
+#	for sub in getSubList(subDir):
+#		fullPath = subDir + sub + dicomPath
+#		os.chdir(fullPath)
+#		if checkForDicoms(sub):
+#			os.chdir(subDir)
+#			continue
+#		print("Unzipping dicoms for subject: " + sub)
+#		untar("dicom.tgz")
+#		os.chdir(subDir)
+	dcm2Nii(subDir, dicomPath)
 
 
 def untar(tarball):
-	for sub in getSubList(subDir):
-		fullPath = subDir + sub + dicomPath
-		os.chdir(fullPath)
-		try:
-			untar = subprocess.run(['tar', '-xzf', tarball], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			untar.check_returncode()
-		except subprocess.CalledProcessError:
-			print("Looks like your tarball didn't untar!\nMake sure you're in the correct directory.")
-			print("This is the current working directory: " + os.getcwd())
-			print("Killing script...")
-			time.sleep(1)
-			sys.exit()
+	try:
+		untar = subprocess.run(['tar', '-xzf', tarball], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		untar.check_returncode()
+	except subprocess.CalledProcessError:
+		print("Looks like your tarball didn't untar!\nMake sure you're in the correct directory.")
+		print("This is the current working directory:" + os.getcwd())
+		print("Killing script...")
+		time.sleep(1)
+		sys.exit()
 
 
 def getSubList(subDir):
@@ -57,8 +55,28 @@ def checkForDicoms(sub, dicom="dicom"):
 
 
 
-def dcm2Nii(subDir):
-	os.chdir()
+def dcm2Nii(subDir, dicomPath):
+	for sub in getSubList(subDir):
+		fullPath = subDir + sub + dicomPath
+		os.chdir(fullPath)
+		if not os.path.isdir("niftis"):
+			os.makedirs("niftis")
+		if os.path.getsize("niftis") == 0:
+			print("Running dcm2niix on subject: " + sub)
+			try:
+				dcm = subprocess.run(['dcm2niix_dev', '-o niftis', '-x n', '-f run-01', '-z n', 'dicom'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				dcm.check_returncode()
+			except subprocess.CalledProcessError:
+				print("Dcm2niix failed to run.\nDouble check that you're in the correct directory.")
+				print("This is the current working directory:" + os.getcwd())
+				print("Killing script...")
+				time.sleep(1)
+				sys.exit()
+		else:
+			print("It looks like dcm2niix has already been run for " + sub + "\nMoving to next subject.")
+
+
+
 
 getPhaseEncodeDirections(dicomPath, subDir)
 
