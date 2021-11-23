@@ -89,8 +89,3 @@ def dcm2Nii(subDir, dicomPath):
 
 getPhaseEncodeDirections(dicomPath, subDir)
 
-
-
-
-#subprocess.run(['dcm2niix_dev', '-o', niftiDir, rawDicoms], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-# ^ this seems to work
