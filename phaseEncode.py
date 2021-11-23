@@ -56,15 +56,18 @@ def checkForDicoms(sub, dicom="dicom"):
 
 
 def dcm2Nii(subDir, dicomPath):
+	niftiDir = "niftis"
+	run = "run-01"
 	for sub in getSubList(subDir):
 		fullPath = subDir + sub + dicomPath
 		os.chdir(fullPath)
+		rawDicoms = fullPath + "/dicom"
 		if not os.path.isdir("niftis"):
 			os.makedirs("niftis")
 		if os.path.getsize("niftis") == 0:
 			print("Running dcm2niix on subject: " + sub)
 			try:
-				dcm = subprocess.run(['dcm2niix_dev', '-o niftis', '-x n', '-f run-01', '-z n', 'dicom'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				dcm = subprocess.run(['dcm2niix_dev', '-o', niftiDir, rawDicoms], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				dcm.check_returncode()
 			except subprocess.CalledProcessError:
 				print("Dcm2niix failed to run.\nDouble check that you're in the correct directory.")
@@ -72,6 +75,12 @@ def dcm2Nii(subDir, dicomPath):
 				print("Killing script...")
 				time.sleep(1)
 				sys.exit()
+			os.chdir(niftiDir)
+			for file in os.listdir():
+				fileName, fileExt = os.path.splitext(file)
+				fileName = run
+				newName = f'{fileName}{fileExt}'
+				os.rename(file, newName)
 		else:
 			print("It looks like dcm2niix has already been run for " + sub + "\nMoving to next subject.")
 
@@ -80,3 +89,8 @@ def dcm2Nii(subDir, dicomPath):
 
 getPhaseEncodeDirections(dicomPath, subDir)
 
+
+
+
+#subprocess.run(['dcm2niix_dev', '-o', niftiDir, rawDicoms], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# ^ this seems to work
