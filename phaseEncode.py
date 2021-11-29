@@ -5,24 +5,27 @@
 # 4) compare the phase encode direction from the field map and dti data for each subject
 # 5) return True/False depending on if they're correctly matched, spit out csv/txt file
 import sys
+import pandas as pd
+import numpy as np
 import csv
 import os
 import subprocess
 import json
 import time
 
-fieldmap = True #Boolean that must be changed depending on if you are running this on fieldmap data
+#fieldmap = True #Boolean that must be changed depending on if you are running this on fieldmap data
 dtiProc = "/PROJECTS/REHARRIS/explosives/dtiProc"
 subDir = "/PROJECTS/REHARRIS/explosives/raw/"
 dicomPath = "/DTI/dti/dti_102multihb/run_01"
 fieldmapPath = "/DTI/fieldmap"
 
-def getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, fieldmap):
-	untar(subDir, dicomPath, fieldmapPath, "dicom.tgz")
-	dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap)
+def getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, fieldmap, dtiProc):
+	#untar(subDir, dicomPath, fieldmap, fieldmapPath, "dicom.tgz")
+	#dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap)
+	extractDirection(subDir, dicomPath, fieldmapPath, dtiProc)
 
 
-def untar(subDir, dicomPath, fieldmapPath, tarball):
+def untar(subDir, dicomPath, fieldmap, fieldmapPath, tarball):
 	for sub in getSubList(subDir):
 		fullPath = subDir + sub + dicomPath if fieldmap is False else subDir + sub + fieldmapPath
 		os.chdir(fullPath)
@@ -92,57 +95,70 @@ def dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap):
 			print("It looks like dcm2niix has already been run for subject: " + sub + "\nMoving to next subject.")
 			time.sleep(1)
 
-def createPhaseEncodeCSV(dtiProc):
+def createPhaseEncodeCSV(dtiProc, subDir):
 	os.chdir(dtiProc)
-	subprocess.run(['touch', 'phaseEncodeDirections.csv'])
-	with open('phaseEncodeDirections.csv', mode='w') as csv_file:
-		fieldnames = ['subject', 'dtiDirection', 'fieldmapDirection']
-		writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-		writer.writeheader()
+	if os.path.isfile("phaseEncodeDirections.csv"):
+		return
+	else:
+		print("Creating csv output file...")
+		time.sleep(1)
+		subprocess.run(['touch', 'phaseEncodeDirections.csv'])
+		with open('phaseEncodeDirections.csv', mode='w') as csv_file:
+			fieldnames = ['subject', 'dtiDirection', 'fieldmapDirection']
+			writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+			writer.writeheader()
 
 
-def addRow(dtiProc, sub, dtiEncodeDir, fieldmapEncodeDir):
+def addRow(dtiProc, sub, dtiEncodeDirection, fmapEncodeDirection):
 	os.chdir(dtiProc)
-	with open('phaseEncodeDirections.csv', mode='w') as csv_file:
-		fieldnames = ['subject', 'dtiDirection', 'fieldmapDirection']
-		writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-		writer.writerow({'subject': sub, 'dtiDirection': dtiEncodeDir, 'fieldmapDirection' : fieldmapEncodeDir})
+	print("Adding subject " + sub + " to the csv file.")
+	time.sleep(1)
+	with open('phaseEncodeDirections.csv', mode='a+', newline = '') as csv_file:
+		writer = csv.writer(csv_file)
+		elements = [sub, dtiEncodeDirection, fmapEncodeDirection]
+		writer.writerow(elements)
 
-
-def extractDirection(subDir, dicomPath):
-	niftiDir = "niftis"
-	jsonFile = "run-01.json"
+def extractDirection(subDir, dicomPath, fieldmapPath, dtiProc):
+	createPhaseEncodeCSV(dtiProc, subDir)
+	niftiDir = "/niftis"
+	dtiJsonFile = "run-01.json"
+	fmapJsonFile = "fieldmap.json"
 	for sub in getSubList(subDir):
-		fullPath = subDir + sub + dicomPath + niftiDir
-		os.chdir(fullPath)
-		with open(jsonFile) as file:
-			info = json.load(file)
-		dtiEncodeDir = info['PhaseEncodingDirection']
-		
+		dtiFullPath = subDir + sub + dicomPath + niftiDir
+		os.chdir(dtiFullPath)
+		with open(dtiJsonFile) as dtiFile:
+			dtiInfo = json.load(dtiFile)
+		dtiEncodeDir = dtiInfo['PhaseEncodingDirection']
+		# do the same for fmap
+		fmapFullPath = subDir + sub + fieldmapPath + niftiDir
+		os.chdir(fmapFullPath)
+		with open(fmapJsonFile) as fmapFile:
+			fmapInfo = json.load(fmapFile)
+		fmapEncodeDir = fmapInfo['PhaseEncodingDirection']
+		addRow(dtiProc, sub, dtiEncodeDir, fmapEncodeDir)
+	checkOutput(dtiProc)
+
+def checkOutput(dtiProc):
+	os.chdir(dtiProc)
+	incorrectDirectionSubs = []
+	df = pd.read_csv("phaseEncodeDirections.csv")
+	incorrectDirectionSubs.append(np.where((df['dtiDirection'] != df['fieldmapDirection']), "All Good", df['subject']))
+	usableList = incorrectDirectionSubs[0]
+	badSubs = []
+	for i in usableList:
+		if i != "All Good":
+			badSubs.append(i)
+	print("These subjects did not have correct phase encoding directions: " + str(badSubs))
+	print("If nothing printed, then you're good!")
 
 
-#	writer.writerow({'emp_name': 'John Smith', 'dept': 'Accounting', 'birth_month': 'November'})
-#    writer.writerow({'emp_name': 'Erica Meyers', 'dept': 'IT', 'birth_month': 'March'})
 
 
 # run on Dti data
-#getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, fieldmap)
+getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, False, dtiProc)
 
 # Run on fieldmaps
-getPhaseEncodeDirections(fieldmapPath, subDir, fieldmapPath, fieldmap)
-
-
-
-
-
-
-
-
-
-
-
-
-
+getPhaseEncodeDirections(fieldmapPath, subDir, fieldmapPath, True, dtiProc)
 
 
 
