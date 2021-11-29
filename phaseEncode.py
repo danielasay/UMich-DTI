@@ -18,8 +18,8 @@ dicomPath = "/DTI/dti/dti_102multihb/run_01"
 fieldmapPath = "/DTI/fieldmap"
 
 def getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, fieldmap):
-	untar(subDir, dicomPath, fieldmapPath "dicom.tgz")
-	dcm2Nii(subDir, dicomPath, fieldmap)
+	untar(subDir, dicomPath, fieldmapPath, "dicom.tgz")
+	dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap)
 
 
 def untar(subDir, dicomPath, fieldmapPath, tarball):
@@ -60,7 +60,7 @@ def checkForDicoms(sub, dicom="dicom"):
 
 
 def dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap):
-	niftiDir = "/niftis"
+	niftiDir = "niftis"
 	run = "run-01" if fieldmap is False else "fieldmap"
 	for sub in getSubList(subDir):
 		fullPath = subDir + sub + dicomPath if fieldmap is False else subDir + sub + fieldmapPath
