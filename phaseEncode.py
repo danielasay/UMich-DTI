@@ -19,17 +19,20 @@ subDir = "/PROJECTS/REHARRIS/explosives/raw/"
 dicomPath = "/DTI/dti/dti_102multihb/run_01"
 fieldmapPath = "/DTI/fieldmap"
 
-def getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, fieldmap, dtiProc):
-	#untar(subDir, dicomPath, fieldmap, fieldmapPath, "dicom.tgz")
-	#dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap)
-	extractDirection(subDir, dicomPath, fieldmapPath, dtiProc)
+
+def unpackData(dicomPath, subDir, fieldmapPath, fieldmap):
+	untar(subDir, dicomPath, fieldmap, fieldmapPath, "dicom.tgz")
+	dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap)
+
+def getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, dtiProc):
+	extractDirections(subDir, dicomPath, fieldmapPath, dtiProc)
 
 
 def untar(subDir, dicomPath, fieldmap, fieldmapPath, tarball):
 	for sub in getSubList(subDir):
 		fullPath = subDir + sub + dicomPath if fieldmap is False else subDir + sub + fieldmapPath
 		os.chdir(fullPath)
-		if checkForDicoms(sub):
+		if checkForDicoms(sub, fieldmap):
 			os.chdir(subDir)
 			continue
 		print("Unzipping dicoms for subject: " + sub)
@@ -53,9 +56,9 @@ def getSubList(subDir):
 			subList.append(dir)
 	return subList
 
-def checkForDicoms(sub, dicom="dicom"):
+def checkForDicoms(sub, fieldmap, dicom="dicom"):
 	if os.path.isdir(dicom):
-		print("Unzipped dicoms already exist for subject: " + sub + "\nMoving to next subject.")
+		print("Unzipped dti dicoms already exist for subject: " + sub + "\nMoving to next subject.") if fieldmap is False else print("Unzipped fieldmap dicoms already exist for subject: " + sub + "\nMoving to next subject.")
 		time.sleep(1)
 		return True
 	else:
@@ -92,12 +95,13 @@ def dcm2Nii(subDir, dicomPath, fieldmapPath, fieldmap):
 
 			
 		else:
-			print("It looks like dcm2niix has already been run for subject: " + sub + "\nMoving to next subject.")
+			print("It looks like dcm2niix has already been run on dti data for subject: " + sub + "\nMoving to next subject.") if fieldmap is False else print("It looks like dcm2niix has already been run on fieldmap data for subject: " + sub + "\nMoving to next subject.")
 			time.sleep(1)
 
 def createPhaseEncodeCSV(dtiProc, subDir):
 	os.chdir(dtiProc)
 	if os.path.isfile("phaseEncodeDirections.csv"):
+		print("Output CSV file already exists!")
 		return
 	else:
 		print("Creating csv output file...")
@@ -118,7 +122,7 @@ def addRow(dtiProc, sub, dtiEncodeDirection, fmapEncodeDirection):
 		elements = [sub, dtiEncodeDirection, fmapEncodeDirection]
 		writer.writerow(elements)
 
-def extractDirection(subDir, dicomPath, fieldmapPath, dtiProc):
+def extractDirections(subDir, dicomPath, fieldmapPath, dtiProc):
 	createPhaseEncodeCSV(dtiProc, subDir)
 	niftiDir = "/niftis"
 	dtiJsonFile = "run-01.json"
@@ -149,17 +153,19 @@ def checkOutput(dtiProc):
 		if i != "All Good":
 			badSubs.append(i)
 	print("These subjects did not have correct phase encoding directions: " + str(badSubs))
-	print("If nothing printed, then you're good!")
+	print("If the list is empty, then you're good!")
 
 
 
 
 # run on Dti data
-getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, False, dtiProc)
+unpackData(dicomPath, subDir, fieldmapPath, False)
 
 # Run on fieldmaps
-getPhaseEncodeDirections(fieldmapPath, subDir, fieldmapPath, True, dtiProc)
+unpackData(fieldmapPath, subDir, fieldmapPath, True)
 
+# Create csv file with phase encode output. Must run this after the unpack functions for both dti and fieldmaps!!
+getPhaseEncodeDirections(dicomPath, subDir, fieldmapPath, dtiProc)
 
 
 
