@@ -3,7 +3,7 @@
 # 2) run dcm2niix_dev on the dicom files
 # 3) extract the phase encode direction
 # 4) compare the phase encode direction from the field map and dti data for each subject
-# 5) return True/False depending on if they're correctly matched, spit out csv/txt file
+# 5) return True/False depending on if they're correctly matched, spit out csv file
 import sys
 import pandas as pd
 import numpy as np
