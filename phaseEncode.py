@@ -115,12 +115,22 @@ def createPhaseEncodeCSV(dtiProc, subDir):
 
 def addRow(dtiProc, sub, dtiEncodeDirection, fmapEncodeDirection):
 	os.chdir(dtiProc)
-	print("Adding subject " + sub + " to the csv file.")
-	time.sleep(1)
-	with open('phaseEncodeDirections.csv', mode='a+', newline = '') as csv_file:
-		writer = csv.writer(csv_file)
-		elements = [sub, dtiEncodeDirection, fmapEncodeDirection]
-		writer.writerow(elements)
+	try:
+		data = pd.read_csv('phaseEncodeDirections.csv')
+		currentRow = data.loc[data['subject'] == sub]
+		dictionary = currentRow.to_dict('records')
+		dictionary = dictionary[0]
+		if dictionary['dtiDirection'] and dictionary['fieldmapDirection']:
+			print("Phase encode directions already inputted for subject: " + sub + "\nMoving to next subject.")
+			time.sleep(1)
+			return
+	except IndexError:
+		print("Adding subject " + sub + " to the csv file.")
+		time.sleep(1)
+		with open('phaseEncodeDirections.csv', mode='a+', newline = '') as csv_file:
+			writer = csv.writer(csv_file)
+			elements = [sub, dtiEncodeDirection, fmapEncodeDirection]
+			writer.writerow(elements)
 
 def extractDirections(subDir, dicomPath, fieldmapPath, dtiProc):
 	createPhaseEncodeCSV(dtiProc, subDir)
