@@ -18,7 +18,7 @@ dtiProc = "/PROJECTS/REHARRIS/explosives/dtiProc"
 subDir = "/PROJECTS/REHARRIS/explosives/raw/"
 dicomPath = "/DTI/dti/dti_102multihb/run_01"
 fieldmapPath = "/DTI/fieldmap"
-
+ 
 
 def unpackData(dicomPath, subDir, fieldmapPath, fieldmap):
 	untar(subDir, dicomPath, fieldmap, fieldmapPath, "dicom.tgz")
