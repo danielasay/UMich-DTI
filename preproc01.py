@@ -55,6 +55,9 @@ def copyData(subDir, rawSubDir, dicomPath, fieldmapPath):
 				print("Copying " + file + " for subject " + sub)
 				shutil.copy(source, destination)
 
+def checkIfDataCopied(dataPath):
+	pass
+
 
 def renameAndConvert():
 	pass
