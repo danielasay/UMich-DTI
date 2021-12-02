@@ -38,7 +38,7 @@ def copyData(subDir, rawSubDir, dicomPath, fieldmapPath):
 	for sub in getSubList(rawSubDir):
 		dtiPath = rawSubDir + sub + dicomPath
 		newDtiPath = subDir + sub + "/dti"
-		dataCopied = checkIfDataCopied(newDtiPath)
+		dataCopied = checkIfDataCopied(newDtiPath, sub, False)
 		if dataCopied is False:
 			for file in os.listdir(dtiPath):
 				source = dtiPath + file
@@ -47,7 +47,7 @@ def copyData(subDir, rawSubDir, dicomPath, fieldmapPath):
 				shutil.copy(source, destination)
 		fieldmaps = rawSubDir + sub + fieldmapPath
 		newFieldmapPath = subDir + sub + "/fieldmaps"
-		dataCopied = checkIfDataCopied(newFieldmapPath)
+		dataCopied = checkIfDataCopied(newFieldmapPath, sub, True)
 		if dataCopied is False:
 			for file in os.listdir(fieldmaps):
 				source = fieldmaps+ file
@@ -55,8 +55,14 @@ def copyData(subDir, rawSubDir, dicomPath, fieldmapPath):
 				print("Copying " + file + " for subject " + sub)
 				shutil.copy(source, destination)
 
-def checkIfDataCopied(dataPath):
-	pass
+def checkIfDataCopied(dataPath, sub, fieldmap):
+	os.chdir(dataPath)
+	dirContents = os.listdir()
+	if dirContents:
+		print("Dti data already copied for subject: " + sub) if fieldmap is False else print("Fieldmap data already copied for subject: " + sub)
+		return True
+	else:
+		return False
 
 
 def renameAndConvert():
