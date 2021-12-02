@@ -65,12 +65,49 @@ def checkIfDataCopied(dataPath, sub, fieldmap):
 		return False
 
 
-def renameAndConvert():
-	pass
+def convert(fieldmap, sub):
+	if fieldmap is False:
+		if os.path.isfile("already_converted.txt"):
+			print("Dti files have already been combined and converted to .mif format.")
+			return
+		print("Converting files for subject: " + sub)
+		convertToMif = f"""
+			mrconvert \
+			run-01.nii \
+			run-01_dwi.mif \
+			-fslgrad run-01.bvec run-01.bval
+		"""
+		subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		subprocess.run(['touch', 'already_converted.txt'])
 
+	else:
+		if os.path.isfile("already_converted.txt"):
+			print("Fmap files have already been combined and converted to .mif format.")
+			return
+		print("Converting files for subject: " + sub)
+		convertToMif = f"""
+			mrconvert \
+			fieldmap.nii \
+			fieldmap.mif \
+			-fslgrad fieldmap.bvec fieldmap.bval
+		"""
+		subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		subprocess.run(['touch', 'already_converted.txt'])
+
+def renameAndConvert(subDir):
+	for sub in getSubList(subDir):
+		# Go into dti directory for the sub and convert data to .mif
+		os.chdir(subDir)
+		dtiData = sub + "/dti"
+		os.chdir(dtiData)
+		convert(False, sub) # False indicates not fieldmap data
+		os.chdir(subDir)
+		fmapData = sub + "/fieldmaps"
+		os.chdir(fmapData)
+		convert(True, sub) # True indicates fieldmap data
 
 def compareVolumes():
-	pass
+	
 
 
 def dwiDenoise():
@@ -85,7 +122,9 @@ def combinePhaseEncoding():
 	pass
 
 
-copyData(subDir, rawSubDir, dicomPath, fieldmapPath)
+#copyData(subDir, rawSubDir, dicomPath, fieldmapPath)
+
+#renameAndConvert(subDir)
 
 
 
