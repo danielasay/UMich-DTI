@@ -6,6 +6,11 @@
 # 5) run dwi_denoise and calculate residual
 # 6) optionally run a visual inspection on residuals
 # 7) extract and combine reverse and primary phase encoding directions - primary == PA, reverse == AP
+
+# It is recommended to run this script on a linux screen as to avoid crashes and incomplete processing steps
+# See https://linuxize.com/post/how-to-use-linux-screen/ for details
+
+
 import shutil
 import os
 import subprocess
@@ -189,8 +194,32 @@ def dwiDenoise(subDir):
 			continue
 
 
-def visualInspection():
-	pass
+def checkResidFile(sub):
+	if os.path.isfile("residual.mif"):
+		print("mrcalc has already been run on subject: " + sub)
+		return True
+	else:
+		return False
+
+def visualInspection(subDir):
+	print("Calculating residuals on subjects...")
+	for sub in getSubList(subDir):
+		dtiSubjectDir = subDir + sub + "/dti"
+		os.chdir(dtiSubjectDir)
+		if not checkResidFile(sub):
+			print("Running on " + sub)
+			residuals = "mrcalc run-01_dwi.mif run-01_den.mif -subtract residual.mif"
+			proc1 = subprocess.Popen(residuals, shell=True, stdout=subprocess.PIPE)
+			proc1.wait()
+		else:
+			continue
+		visual = input("Would you like to do a visual inspection of subject: " + sub + "'s data?\nEnter 'yes' or 'no': ")
+		if visual == "yes":
+			view = "mrview residual.mif"
+			proc2 = subprocess.Popen(view, shell=True, stdout=subprocess.PIPE)
+			proc2.wait()
+		else:
+			continue
 
 
 def combinePhaseEncoding():
@@ -203,7 +232,9 @@ def combinePhaseEncoding():
 
 #compareVolumes(subDir)
 
-dwiDenoise(subDir)
+#dwiDenoise(subDir)
+
+#visualInspection(subDir)
 
 
 
