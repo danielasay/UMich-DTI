@@ -170,6 +170,7 @@ def compareVolumes(subDir):
 			os.getcwd()
 			print("Killing script...")
 			sys.exit()
+	print("Volume numbers are consistent for all subs!")
 
 
 def checkNoiseFile(sub):
@@ -196,7 +197,7 @@ def dwiDenoise(subDir):
 
 def checkResidFile(sub):
 	if os.path.isfile("residual.mif"):
-		print("mrcalc has already been run on subject: " + sub)
+		print("Residuals have already been calculated for subject: " + sub)
 		return True
 	else:
 		return False
@@ -222,20 +223,49 @@ def visualInspection(subDir):
 			continue
 
 
-def combinePhaseEncoding():
-	pass
+def createB0(subDir):
+	#Get b0 image
+	for sub in getSubList(subDir):
+		currentSub = subDir + sub
+		os.chdir(currentSub)
+		if os.path.isdir("combined"):
+			print("B0 image already created for subject: " + sub)
+			continue
+		else:
+			os.makedirs("combined")
+			combinedDir = os.getcwd() + "/combined"
+			print("Creating B0 image for subject: " + sub)
+		# get mean for fmaps
+		os.chdir("fieldmaps")
+		fmapB0 = "mrconvert fieldmap.mif -fslgrad fieldmap.bvec fieldmap.bval - | mrmath - mean meanReversed.mif -axis 3"
+		proc1 = subprocess.Popen(fmapB0, shell=True, stdout=subprocess.PIPE)
+		proc1.wait()
+		shutil.copy("meanReversed.mif", combinedDir)
+		os.chdir(currentSub)
+		# get mean for dti
+		os.chdir("dti")
+		dtiB0 = "dwiextract run-01_den.mif - -bzero | mrmath - mean meanPrimary.mif -axis 3"
+		proc2 = subprocess.Popen(dtiB0, shell=True, stdout=subprocess.PIPE)
+		proc2.wait()
+		shutil.copy("meanPrimary.mif", combinedDir)
+		# combine means into b0 image
+		os.chdir(combinedDir)
+		meanB0 = "mrcat meanReversed.mif meanPrimary.mif -axis 3 b0_pair.mif"
+		proc3 = subprocess.Popen(meanB0, shell=True, stdout=subprocess.PIPE)
+		proc3.wait()
 
 
-#copyData(subDir, rawSubDir, dicomPath, fieldmapPath)
+def runAll(subDir, rawSubDir, dicomPath, fieldmapPath):
+	makeSubDirs(subDir, rawSubDir)
+	copyData(subDir, rawSubDir, dicomPath, fieldmapPath)
+	renameAndConvert(subDir)
+	compareVolumes(subDir)
+	dwiDenoise(subDir)
+	visualInspection(subDir)
+	createB0(subDir)
 
-#renameAndConvert(subDir)
 
-#compareVolumes(subDir)
-
-#dwiDenoise(subDir)
-
-#visualInspection(subDir)
-
+runAll(subDir, rawSubDir, dicomPath, fieldmapPath)
 
 
 
