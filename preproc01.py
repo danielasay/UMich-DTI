@@ -9,6 +9,10 @@
 import shutil
 import os
 import subprocess
+import pandas as pd
+import nibabel as nib
+import numpy as np
+import time
 
 rawSubDir = "/PROJECTS/REHARRIS/explosives/raw/"
 subDir = "/PROJECTS/REHARRIS/explosives/dtiProc/subs/"
@@ -106,8 +110,71 @@ def renameAndConvert(subDir):
 		os.chdir(fmapData)
 		convert(True, sub) # True indicates fieldmap data
 
-def compareVolumes():
-	
+
+#use nibabel library to redo this function
+#mri = nib.load('data.nii')
+#mri.shape
+#mri.shape[3]
+ # also use numpy: np.loadtxt('bvec.txt', dtype='str').shape[1]
+ # ^ this is after cat run-01.bvec
+# cmd = "cat run-01.bvec > bvec.txt"
+#proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+#output = proc.stdout.read()
+#print output
+
+def checkIfEqual(array):
+	array = iter(array)
+	try:
+		first = next(array)
+	except StopIteration:
+		return True
+	return all(first == x for x in array)
+
+def compareVolumes(subDir):
+	for sub in getSubList(subDir):
+		dtiVolumes = []
+		dtiSubjectDir = subDir + sub + "/dti"
+		os.chdir(dtiSubjectDir)
+		print("Comparing dti file values for subject: " + sub + "...")
+		dim4 = nib.load("run-01.nii")
+		dtiVolumes.append(dim4.shape[3])
+		bvecCmd = "cat run-01.bvec > bvec.txt"
+		subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
+		time.sleep(1)
+		dtiVolumes.append(np.loadtxt('bvec.txt', dtype='str').shape[1])
+		bvalCmd = "cat run-01.bval > bval.txt"
+		subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
+		time.sleep(1)
+		dtiVolumes.append(np.loadtxt('bval.txt', dtype='str').shape[0])
+		if not checkIfEqual(dtiVolumes):
+			print("Dti volume numbers not equal for subject: " + sub + "\nThis is the current working directory:")
+			os.getcwd()
+			print("Killing script...")
+			sys.exit()
+		else:
+			print("Dti volume numbers equal for subject: " + sub + "!")
+		# Run check for fmap data
+		fmapVolumes = []
+		fmapSubjectDir = subDir + sub + "/fieldmaps"
+		os.chdir(fmapSubjectDir)
+		print("Comparing fieldmap file values for subject: " + sub + "...")
+		dim4 = nib.load("fieldmap.nii")
+		fmapVolumes.append(dim4.shape[3])
+		bvecCmd = "cat fieldmap.bvec > bvec.txt"
+		subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
+		time.sleep(1)
+		dtiVolumes.append(np.loadtxt('bvec.txt', dtype='str').shape[1])
+		bvalCmd = "cat fieldmap.bval > bval.txt"
+		subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
+		time.sleep(1)
+		dtiVolumes.append(np.loadtxt('bval.txt', dtype='str').shape[0])
+		if not checkIfEqual(fmapVolumes):
+			print("Fmap volume Numbers not equal for subject: " + sub + "\nThis is the current working directory:")
+			os.getcwd()
+			print("Killing script...")
+			sys.exit()
+		else:
+			print("Fieldmap volume numbers equal for subject: " + sub + "!")
 
 
 def dwiDenoise():
@@ -125,6 +192,8 @@ def combinePhaseEncoding():
 #copyData(subDir, rawSubDir, dicomPath, fieldmapPath)
 
 #renameAndConvert(subDir)
+
+compareVolumes(subDir)
 
 
 
