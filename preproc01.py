@@ -111,17 +111,6 @@ def renameAndConvert(subDir):
 		convert(True, sub) # True indicates fieldmap data
 
 
-#use nibabel library to redo this function
-#mri = nib.load('data.nii')
-#mri.shape
-#mri.shape[3]
- # also use numpy: np.loadtxt('bvec.txt', dtype='str').shape[1]
- # ^ this is after cat run-01.bvec
-# cmd = "cat run-01.bvec > bvec.txt"
-#proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-#output = proc.stdout.read()
-#print output
-
 def checkIfEqual(array):
 	array = iter(array)
 	try:
