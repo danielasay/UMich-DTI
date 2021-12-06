@@ -39,6 +39,7 @@ def getSubList(rawSubDir):
 	return subList
 
 def copyData(subDir, rawSubDir, dicomPath, fieldmapPath):
+	print("Copying raw over raw data...")
 	for sub in getSubList(rawSubDir):
 		dtiPath = rawSubDir + sub + dicomPath
 		newDtiPath = subDir + sub + "/dti"
@@ -81,7 +82,8 @@ def convert(fieldmap, sub):
 			run-01_dwi.mif \
 			-fslgrad run-01.bvec run-01.bval
 		"""
-		subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		proc1 = subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		proc1.wait()
 		subprocess.run(['touch', 'already_converted.txt'])
 
 	else:
@@ -95,10 +97,12 @@ def convert(fieldmap, sub):
 			fieldmap.mif \
 			-fslgrad fieldmap.bvec fieldmap.bval
 		"""
-		subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		proc2 = subprocess.Popen(convertToMif, shell=True, stdout=subprocess.PIPE)
+		proc2.wait()
 		subprocess.run(['touch', 'already_converted.txt'])
 
 def renameAndConvert(subDir):
+	print("Converting files from nii to mif format...")
 	for sub in getSubList(subDir):
 		# Go into dti directory for the sub and convert data to .mif
 		os.chdir(subDir)
@@ -120,54 +124,69 @@ def checkIfEqual(array):
 	return all(first == x for x in array)
 
 def compareVolumes(subDir):
+	print("Checking that volume numbers are consistent across nii, bvec and bval files...")
 	for sub in getSubList(subDir):
 		dtiVolumes = []
 		dtiSubjectDir = subDir + sub + "/dti"
 		os.chdir(dtiSubjectDir)
-		print("Comparing dti file values for subject: " + sub + "...")
+		#	print("Comparing dti file values for subject: " + sub + "...")
 		dim4 = nib.load("run-01.nii")
 		dtiVolumes.append(dim4.shape[3])
 		bvecCmd = "cat run-01.bvec > bvec.txt"
-		subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
-		time.sleep(1)
+		proc1 = subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
+		proc1.wait()
 		dtiVolumes.append(np.loadtxt('bvec.txt', dtype='str').shape[1])
 		bvalCmd = "cat run-01.bval > bval.txt"
-		subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
-		time.sleep(1)
+		proc2 = subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
+		proc2.wait()
 		dtiVolumes.append(np.loadtxt('bval.txt', dtype='str').shape[0])
 		if not checkIfEqual(dtiVolumes):
 			print("Dti volume numbers not equal for subject: " + sub + "\nThis is the current working directory:")
 			os.getcwd()
 			print("Killing script...")
 			sys.exit()
-		else:
-			print("Dti volume numbers equal for subject: " + sub + "!")
 		# Run check for fmap data
 		fmapVolumes = []
 		fmapSubjectDir = subDir + sub + "/fieldmaps"
 		os.chdir(fmapSubjectDir)
-		print("Comparing fieldmap file values for subject: " + sub + "...")
+		#print("Comparing fieldmap file values for subject: " + sub + "...")
 		dim4 = nib.load("fieldmap.nii")
 		fmapVolumes.append(dim4.shape[3])
 		bvecCmd = "cat fieldmap.bvec > bvec.txt"
-		subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
-		time.sleep(1)
+		proc3 = subprocess.Popen(bvecCmd, shell=True, stdout=subprocess.PIPE)
+		proc3.wait()
 		dtiVolumes.append(np.loadtxt('bvec.txt', dtype='str').shape[1])
 		bvalCmd = "cat fieldmap.bval > bval.txt"
-		subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
-		time.sleep(1)
+		proc4 = subprocess.Popen(bvalCmd, shell=True, stdout=subprocess.PIPE)
+		proc4.wait()
 		dtiVolumes.append(np.loadtxt('bval.txt', dtype='str').shape[0])
 		if not checkIfEqual(fmapVolumes):
 			print("Fmap volume Numbers not equal for subject: " + sub + "\nThis is the current working directory:")
 			os.getcwd()
 			print("Killing script...")
 			sys.exit()
+
+
+def checkNoiseFile(sub):
+	if os.path.isfile("noise.mif"):
+		print("dwi_denoise has already been run on subject: " + sub)
+		return True
+	else:
+		return False
+
+
+def dwiDenoise(subDir):
+	print("Running dwi_denoise on subjects...")
+	for sub in getSubList(subDir):
+		dtiSubjectDir = subDir + sub + "/dti"
+		os.chdir(dtiSubjectDir)
+		if not checkNoiseFile(sub):
+			print("Running on " + sub)
+			denoise = "dwidenoise run-01_dwi.mif run-01_den.mif -noise noise.mif"
+			proc = subprocess.Popen(denoise, shell=True, stdout=subprocess.PIPE)
+			proc.wait()
 		else:
-			print("Fieldmap volume numbers equal for subject: " + sub + "!")
-
-
-def dwiDenoise():
-	pass
+			continue
 
 
 def visualInspection():
@@ -182,7 +201,9 @@ def combinePhaseEncoding():
 
 #renameAndConvert(subDir)
 
-compareVolumes(subDir)
+#compareVolumes(subDir)
+
+dwiDenoise(subDir)
 
 
 
