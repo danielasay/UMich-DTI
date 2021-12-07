@@ -248,11 +248,15 @@ def createB0(subDir):
 		proc2 = subprocess.Popen(dtiB0, shell=True, stdout=subprocess.PIPE)
 		proc2.wait()
 		shutil.copy("meanPrimary.mif", combinedDir)
+		shutil.copy("run-01_den.mif", combinedDir)
 		# combine means into b0 image
 		os.chdir(combinedDir)
 		meanB0 = "mrcat meanReversed.mif meanPrimary.mif -axis 3 b0_pair.mif"
 		proc3 = subprocess.Popen(meanB0, shell=True, stdout=subprocess.PIPE)
 		proc3.wait()
+
+
+
 
 
 def runAll(subDir, rawSubDir, dicomPath, fieldmapPath):
