@@ -5,13 +5,12 @@
 #SBATCH --mail-type=END,FAIL
 
 #SBATCH --account=kboehnke99
-#SBATCH --partition=standard
+#SBATCH --partition=gpu
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 
-#### If you change cpus-per-task or mem, change them in the fmriprep command
-#SBATCH --cpus-per-task=3
+#SBATCH --cpus-per-task=8
 #SBATCH --mem=32gb
 
 #SBATCH --time=6:00:00
@@ -19,8 +18,8 @@
 
 #### End SBATCH preamble
 
-source /home/${USER}/.bash_profile
-module load fsl/5.0.11
+module purge
+module load mrtrix
 
 
 my_job_header
@@ -70,10 +69,11 @@ cd BIDS
 #### dwipreproc command
 
 dwifslpreproc run-01_den.mif run-01_den_preproc.mif \
-	 -nocleanup \
-	 -pe_dir PA \
-	 -rpe_pair -se_epi b0_pair.mif \
-	 -eddy_options " --slm=linear --data_is_shelled"
+	-nocleanup \
+	-fslgrad run-01.bvec run-01.bval \
+	-pe_dir PA \
+	-rpe_pair -se_epi b0_pair.mif \
+	-eddy_options " --slm=linear --data_is_shelled"
 
 finish_time=$(date +%s)
 
