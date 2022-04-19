@@ -255,8 +255,22 @@ def createB0(subDir):
 		proc3 = subprocess.Popen(meanB0, shell=True, stdout=subprocess.PIPE)
 		proc3.wait()
 
-
-
+def fixDataStrides(subDir):
+	"""
+	This is to be run when the data strides read as anything else besides [-1 2 3 4]
+	Use mrinfo to view data strides. This is a fix after dwifslpreproc would not run.
+	"""
+	for sub in getSubList(subDir):
+		currentSub = subDir + sub + "/combined"
+		os.chdir(currentSub)
+		mifToNii = "mrconvert run-01_den.mif tmp.nii"
+		proc1 = subprocess.Popen(mifToNii, shell=True, stdout=subprocess.PIPE)
+		proc1.wait()
+		os.remove("run-01_den.mif")
+		niiToMif = "mrconvert tmp.nii run-01_den.mif -fslgrad run-01.bvec run-01.bval"
+		proc2 = subprocess.Popen(niiToMif, shell=True, stdout=subprocess.PIPE)
+		proc2.wait()
+		os.remove("tmp.nii")
 
 
 def runAll(subDir, rawSubDir, dicomPath, fieldmapPath):
@@ -267,9 +281,10 @@ def runAll(subDir, rawSubDir, dicomPath, fieldmapPath):
 	dwiDenoise(subDir)
 	visualInspection(subDir)
 	createB0(subDir)
+	fixDataStrides(subDir)
 
 
-runAll(subDir, rawSubDir, dicomPath, fieldmapPath)
+#runAll(subDir, rawSubDir, dicomPath, fieldmapPath)
 
-
+#fixDataStrides(subDir)
 
