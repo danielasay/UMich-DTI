@@ -13,7 +13,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32gb
 
-#SBATCH --time=6:00:00
+#SBATCH --time=1:00:00
 #SBATCH --export=ALL
 
 #### End SBATCH preamble
@@ -70,7 +70,6 @@ cd BIDS
 
 dwifslpreproc run-01_den.mif run-01_den_preproc.mif \
 	-nocleanup \
-	-fslgrad run-01.bvec run-01.bval \
 	-pe_dir PA \
 	-rpe_pair -se_epi b0_pair.mif \
 	-eddy_options " --slm=linear --data_is_shelled"
