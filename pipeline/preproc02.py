@@ -22,11 +22,9 @@ def checkIfCompleted(procDir):
 	for sub in os.listdir(os.getcwd()):
 		os.chdir(sub)
 		if os.path.isfile("wmfod_norm.mif"):
-			print("all steps have already been run on subject " + sub + ". Moving to next subject...")
-			os.chdir(procDir)
-			continue
-		else:
+			print("all steps have already been run on subject " + sub)
 			noRunSubList.append(sub)
+			os.chdir(procDir)
 		os.chdir(procDir)
 	return noRunSubList
 
@@ -65,6 +63,8 @@ def getSubListBiasCorrect(procDir, noRunList):
 	os.chdir(procDir)
 	subList = []
 	for sub in os.listdir(os.getcwd()):
+		if sub in noRunList:
+			continue
 		os.chdir(sub)
 		if os.path.isfile("run-01_den_preproc_unbiased.mif"):
 			print("dwibiascorrect has already been run on subject " + sub + ". Moving to next subject...")
@@ -94,6 +94,8 @@ def getSubListDwiMask(procDir, noRunList):
 	os.chdir(procDir)
 	subList = []
 	for sub in os.listdir(os.getcwd()):
+		if sub in noRunList:
+			continue
 		os.chdir(sub)
 		if os.path.isfile("mask.mif"):
 			print("dwi2mask has already been run on subject " + sub + ". Moving to next subject...")
@@ -121,6 +123,8 @@ def getSubListDwiResponse(procDir, noRunList):
 	os.chdir(procDir)
 	subList = []
 	for sub in os.listdir(os.getcwd()):
+		if sub in noRunList:
+			continue
 		os.chdir(sub)
 		if os.path.isfile("wm.txt"):
 			print("dwi2response has already been run on subject " + sub + ". Moving to next subject...")
@@ -156,6 +160,8 @@ def getSubListDwiFod(procDir, noRunList):
 	os.chdir(procDir)
 	subList = []
 	for sub in os.listdir(os.getcwd()):
+		if sub in noRunList:
+			continue
 		os.chdir(sub)
 		if os.path.isfile("vf.mif"):
 			print("dwi2Fod has already been run on subject " + sub + ". Moving to next subject...")
@@ -196,8 +202,9 @@ def getSubListNormalize(procDir, noRunList):
 	return subList
 
 
-noRunList = checkIfCompleted(procDir)
 verifyModules()
+checkIfCompleted(procDir)
+noRunList = checkIfCompleted(procDir)
 dwibiascorrect(procDir, noRunList)
 dwi2mask(procDir, noRunList)
 dwi2Response(procDir, noRunList)
